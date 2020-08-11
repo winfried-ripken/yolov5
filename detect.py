@@ -45,10 +45,11 @@ def detect(save_img=False):
     vid_path, vid_writer = None, None
     if webcam:
         view_img = True
+        save_img = False
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz)
     else:
-        save_img = True
+        save_img = opt.save_img
         dataset = LoadImages(source, img_size=imgsz)
 
     # Get names and colors
@@ -161,6 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--save-img', action='store_true', help='save processed image or video files')
+
     opt = parser.parse_args()
     print(opt)
 
