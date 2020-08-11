@@ -17,7 +17,7 @@ from utils.general import (
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
-def detect(save_img=False):
+def detect():
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
@@ -46,10 +46,11 @@ def detect(save_img=False):
     vid_path, vid_writer = None, None
     if webcam:
         view_img = True
+        save_img = False
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz)
     else:
-        save_img = True
+        save_img = opt.save_img
         dataset = LoadImages(source, img_size=imgsz)
 
     # Get names and colors
@@ -159,6 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--update', action='store_true', help='update all models')
+    parser.add_argument('--save-img', action='store_true', help='save processed image or video files')
     opt = parser.parse_args()
     print(opt)
 
