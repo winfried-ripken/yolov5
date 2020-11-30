@@ -1,20 +1,14 @@
-import argparse
-import time
 from copy import deepcopy
-from pathlib import Path
 
 import cv2
-import torch
 import numpy as np
-import torch.backends.cudnn as cudnn
+import torch
 from numpy import random
+import pickle
 
 from models.experimental import attempt_load
-from utils.datasets import LoadStreams, LoadImages, letterbox
-from utils.general import check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, \
-    strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
-from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.datasets import letterbox
+from utils.general import check_img_size, non_max_suppression, scale_coords
 
 
 class YoloConfig:
@@ -41,17 +35,28 @@ class YoloConfig:
                           torch.tensor(xxx.img).cuda(), xxx.names, xxx.colors))
 
 
-def run_model(image_xx):
-    augment = False
+def load_yolo_model(device="cuda:0", torchscript=False):
     weights = "yolov5x.pt"
-    imgsz = 640
-    device = "0"
+    device = torch.device(device)
 
-    # Initialize
-    device = select_device(device)
+    if torchscript:
+        model = torch.jit.load("yolov5x.torchscript.pt", map_location=device)
+    else:
+        # Initialize
+        model = attempt_load(weights, map_location=device)  # load FP32 model
+
+    return model
+
+
+def run_model(image_xx, model=None, device="cuda:0"):
+    if model is None:
+        model = load_yolo_model(device)
+
+    augment = False
+    imgsz = 640
+    device = torch.device(device)
 
     # Load model
-    model = attempt_load(weights, map_location=device)  # load FP32 model
     imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
 
     # Get names and colors
@@ -61,7 +66,7 @@ def run_model(image_xx):
 
     # code from dataloader to scale image
     im0 = image_xx
-    img = letterbox(image_xx, new_shape=imgsz)[0]
+    img = letterbox(image_xx, new_shape=imgsz, scaleFill=True)[0]
 
     # Convert
     img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
@@ -75,6 +80,38 @@ def run_model(image_xx):
 
     # Inference
     pred = model(img, augment=augment)[0]
+    return YoloConfig(pred, im0, img, names, colors)
+
+
+def run_model_tscript(image_xx, model=None, device="cuda:0"):
+    if model is None:
+        model = load_yolo_model(device, True)
+
+    imgsz = (640, 480)
+    device = torch.device(device)
+
+    # Get names and colors
+    with open('names.pkl', 'rb') as f:
+        names = pickle.load(f)
+    with open('colors.pkl', 'rb') as f:
+        colors = pickle.load(f)
+
+    # code from dataloader to scale image
+    im0 = image_xx
+    img = cv2.resize(im0, imgsz)
+
+    # Convert
+    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+    img = np.ascontiguousarray(img)
+
+    img = torch.from_numpy(img).to(device)
+    img = img.float()  # uint8 to fp16/32
+    img /= 255.0  # 0 - 255 to 0.0 - 1.0
+    if img.ndimension() == 3:
+        img = img.unsqueeze(0)
+
+    # Inference
+    pred = model(img)[0]
     return YoloConfig(pred, im0, img, names, colors)
 
 
@@ -100,7 +137,7 @@ def detect(y_config):
 
 
 if __name__ == '__main__':
-    im = np.random.random((480, 480, 3))
+    im = np.random.random((720, 1280, 3))
     res = run_model(im)
     res = detect(res)
     print(res)

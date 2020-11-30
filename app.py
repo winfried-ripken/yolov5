@@ -1,14 +1,21 @@
+import cv2
 import numpy as np
 import streamlit as st
 from imageio import get_reader
-from detect_image import run_model, detect
+from detect_image import run_model, detect, run_model_tscript
 from utils.plots import plot_one_box
 
 
 @st.cache(suppress_st_warning=True)
-def yolo_compute(index):
-    frameX = np.array(video.get_data(index))
-    return run_model(frameX).numpy()
+def yolo_compute(index, ts=False):
+    f = video.get_data(index)
+    frameX = np.array(f)
+
+    if ts:
+        frameX = cv2.resize(frameX, (640, 480))
+        return run_model_tscript(frameX).numpy()
+    else:
+        return run_model(frameX).numpy()
 
 
 def detect_class(y_config, classes, thresh):
@@ -30,8 +37,10 @@ frame_placeholder = st.sidebar.empty()
 
 video = get_reader("/home/winfried/pa_data/ananth.mp4")
 
+use_ts = st.sidebar.checkbox("use torchscript")
+
 fs = frame_placeholder.slider("frame", 0, 1000, 0, 5)
-res = yolo_compute(fs).torch()  # , classes=[2], conf_thres=value
+res = yolo_compute(fs, ts=use_ts).torch()  # , classes=[2], conf_thres=value
 
 scl = st.sidebar.radio("show classes", ["all", "car", "pedestrians", "traffic lights"])
 tcar = st.sidebar.slider("car threshold", 0.0, 1.0, 0.25, 0.01)

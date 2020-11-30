@@ -30,7 +30,7 @@ if __name__ == '__main__':
     t = time.time()
 
     # Load PyTorch model
-    model = attempt_load(opt.weights, map_location=torch.device('cpu'))  # load FP32 model
+    model = attempt_load(opt.weights, map_location=torch.device('cuda:0'))  # load FP32 model
     labels = model.names
 
     # Checks
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
 
     # Input
-    img = torch.zeros(opt.batch_size, 3, *opt.img_size)  # image size(1,3,320,192) iDetection
+    img = torch.rand(opt.batch_size, 3, *opt.img_size)  # image size(1,3,320,192) iDetection
 
     # Update model
     for k, m in model.named_modules():
@@ -47,15 +47,23 @@ if __name__ == '__main__':
             m.act = Hardswish()  # assign activation
         # if isinstance(m, models.yolo.Detect):
         #     m.forward = m.forward_export  # assign forward (optional)
-    model.model[-1].export = True  # set Detect() layer export=True
-    y = model(img)  # dry run
+    # model.model[-1].export = True  # set Detect() layer export=True
+    y = model(img.cuda())  # dry run
+    model.cuda()
+
+    print("shape", img.shape)
+    print("y", y[0].shape)
 
     # TorchScript export
     try:
         print('\nStarting TorchScript export with torch %s...' % torch.__version__)
         f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
-        ts = torch.jit.trace(model, img)
+        ts = torch.jit.trace(model.cuda(), img.cuda())
         ts.save(f)
+        y_ts = torch.jit.load(f)(img.cuda())
+
+        print((y_ts[0] - y[0]).sum())
+
         print('TorchScript export success, saved as %s' % f)
     except Exception as e:
         print('TorchScript export failure: %s' % e)
