@@ -32,7 +32,7 @@ class YoloConfig:
     def torch(self):
         xxx = deepcopy(self)
         return deepcopy(YoloConfig(torch.tensor(xxx.pred).cuda(), xxx.im0,
-                          torch.tensor(xxx.img).cuda(), xxx.names, xxx.colors))
+                                   torch.tensor(xxx.img).cuda(), xxx.names, xxx.colors))
 
 
 def load_yolo_model(device="cuda:0", torchscript=False):
@@ -48,12 +48,11 @@ def load_yolo_model(device="cuda:0", torchscript=False):
     return model
 
 
-def run_model(image_xx, model=None, device="cuda:0"):
+def run_model(image_xx, model=None, device="cuda:0", imgsz=640):
     if model is None:
         model = load_yolo_model(device)
 
     augment = False
-    imgsz = 640
     device = torch.device(device)
 
     # Load model
@@ -69,7 +68,7 @@ def run_model(image_xx, model=None, device="cuda:0"):
     img = letterbox(image_xx, new_shape=imgsz, scaleFill=True)[0]
 
     # Convert
-    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+    img = img.transpose(2, 0, 1)
     img = np.ascontiguousarray(img)
 
     img = torch.from_numpy(img).to(device)
@@ -101,7 +100,7 @@ def run_model_tscript(image_xx, model=None, device="cuda:0"):
     img = cv2.resize(im0, imgsz)
 
     # Convert
-    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+    img = img.transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
     img = np.ascontiguousarray(img)
 
     img = torch.from_numpy(img).to(device)
@@ -115,7 +114,7 @@ def run_model_tscript(image_xx, model=None, device="cuda:0"):
     return YoloConfig(pred, im0, img, names, colors)
 
 
-def detect(y_config):
+def detect(y_config, output_indices=False):
     # Apply NMS
     pred = non_max_suppression(y_config.pred, y_config.conf_thres, y_config.iou_thres, classes=y_config.classes,
                                agnostic=y_config.agnostic_nms)
@@ -131,7 +130,8 @@ def detect(y_config):
             # Write results
             for *xyxy, conf, cls in reversed(det):
                 # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                bboxes.append((y_config.names[int(cls)], [el.item() for el in xyxy], conf.item()))
+                cc = int(cls) if output_indices else y_config.names[int(cls)]
+                bboxes.append((cc, [el.item() for el in xyxy], conf.item()))
 
     return bboxes
 
