@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import cv2
 import numpy as np
+import os
 import torch
 from numpy import random
 import pickle
@@ -29,10 +30,15 @@ class YoloConfig:
         self.img = self.img.cpu().numpy()
         return self
 
-    def torch(self):
+    def torch(self, device):
         xxx = deepcopy(self)
-        return deepcopy(YoloConfig(torch.tensor(xxx.pred).cuda(), xxx.im0,
-                                   torch.tensor(xxx.img).cuda(), xxx.names, xxx.colors))
+
+        if device.startswith("cuda"):
+            return deepcopy(YoloConfig(torch.tensor(xxx.pred).cuda(), xxx.im0,
+                                       torch.tensor(xxx.img).cuda(), xxx.names, xxx.colors))
+        else:
+            return deepcopy(YoloConfig(torch.tensor(xxx.pred), xxx.im0,
+                                       torch.tensor(xxx.img), xxx.names, xxx.colors))
 
 
 def load_yolo_model(device="cuda:0", torchscript=False):
@@ -137,7 +143,9 @@ def detect(y_config, output_indices=False):
 
 
 if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
     im = np.random.random((720, 1280, 3))
-    res = run_model(im)
+    res = run_model(im, device="cpu")
     res = detect(res)
     print(res)

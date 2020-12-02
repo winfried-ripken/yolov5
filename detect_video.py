@@ -96,6 +96,7 @@ class CocoLabelResultWriter:
 
             self.annotation_id_counter += 1
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=str, default='video.mp4', help='source video')
