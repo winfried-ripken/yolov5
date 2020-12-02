@@ -21,6 +21,8 @@ seaborn
 pandas
 
 streamlit
+imageio
+imageio-ffmpeg
 
 # export --------------------------------------
 # coremltools==4.0
