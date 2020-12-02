@@ -131,7 +131,7 @@ def detect(y_config, output_indices=False):
             for *xyxy, conf, cls in reversed(det):
                 # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                 cc = int(cls) if output_indices else y_config.names[int(cls)]
-                bboxes.append((cc, [el.item() for el in xyxy], conf.item()))
+                bboxes.append([cc, [el.item() for el in xyxy], conf.item()])
 
     return bboxes
 
