@@ -31,18 +31,18 @@ class YoloConfig:
         return self
 
     def torch(self, device):
+        device_d = torch.device(device)
         xxx = deepcopy(self)
 
         if device.startswith("cuda"):
-            return deepcopy(YoloConfig(torch.tensor(xxx.pred).cuda(), xxx.im0,
-                                       torch.tensor(xxx.img).cuda(), xxx.names, xxx.colors))
+            return deepcopy(YoloConfig(torch.tensor(xxx.pred).to(device_d), xxx.im0,
+                                       torch.tensor(xxx.img).to(device_d), xxx.names, xxx.colors))
         else:
             return deepcopy(YoloConfig(torch.tensor(xxx.pred), xxx.im0,
                                        torch.tensor(xxx.img), xxx.names, xxx.colors))
 
 
-def load_yolo_model(device="cuda:0", torchscript=False):
-    weights = "yolov5x.pt"
+def load_yolo_model(device="cuda:0", torchscript=False, weights="yolov5x.pt"):
     device = torch.device(device)
 
     if torchscript:

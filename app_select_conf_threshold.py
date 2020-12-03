@@ -9,17 +9,22 @@ from detect_video import process_model_output
 
 
 @st.cache(suppress_st_warning=True)
-def get_yolo_model(device):
+def get_yolo_model(device, weights):
     print("loading model")
-    model = load_yolo_model(device=device)
+    model = load_yolo_model(device=device, weights=weights)
     return model
 
 
 @st.cache(suppress_st_warning=True)
-def yolo_compute(index, device):
-    f = video.get_data(index)
+def cache_frames(index):
+    return np.array(video.get_data(index))
+
+
+@st.cache(suppress_st_warning=True)
+def yolo_compute(index, device, weights):
+    f = cache_frames(index)
     frameX = np.array(f)
-    model = get_yolo_model(device)
+    model = get_yolo_model(device, weights)
 
     return run_model(frameX, model, device).numpy()
 
@@ -63,13 +68,16 @@ img_placeholder = st.empty()
 curr_frame = st.sidebar.slider("frame", 0, int(num_frames) - 1, 0, 1)
 show_pred = st.sidebar.checkbox("show predictions", True)
 
-res = yolo_compute(curr_frame, opt.device)
-res = res.torch(opt.device)
-tconf = st.sidebar.slider("confidence threshold", 0.0, 1.0, 0.25, 0.01)
-
+wconf = None
 if show_pred:
+    wconf = st.sidebar.radio("weights", ["yolov5x.pt", "best.pt"])
+
+    res = yolo_compute(curr_frame, opt.device, weights=wconf)
+    res = res.torch(opt.device)
+    tconf = st.sidebar.slider("confidence threshold", 0.0, 1.0, 0.25, 0.01)
+
     frame, _ = process_model_output(res, tconf)
 else:
-    frame = res.im0
+    frame = cache_frames(curr_frame)
 
 img_placeholder.image(frame, width=640)
