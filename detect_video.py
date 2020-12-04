@@ -20,19 +20,21 @@ def get_class_to_label():
     # 5 - bus
     # 7 - truck
 
-    return {0: "pedestrian",
+    return {0: "person",
             1: "bicycle",
-            2: "vehicle",
+            2: "car",
             3: "motorcycle",
-            5: "vehicle",
-            7: "vehicle"}
+            5: "bus",
+            7: "truck"}
 
 
 def get_label_to_id_ours():
-    return {"pedestrian": 1,
-            "bicycle": 2,
-            "vehicle": 3,
-            "motorcycle": 4}
+    return {"person": 0,
+            "bicycle": 1,
+            "car": 2,
+            "motorcycle": 3,
+            "bus": 4,
+            "truck": 5}
 
 
 def process_model_output(det, conf_thres):
@@ -97,6 +99,30 @@ class CocoLabelResultWriter:
             self.annotation_id_counter += 1
 
 
+class CustomJsonLabelResultWriter:
+    def __init__(self, json_file):
+        self.json_file = json_file
+        self.data = []
+
+    def dump(self):
+        with open(self.json_file, 'w') as f:
+            json.dump(self.data, f, indent=4)
+
+    def append_frame(self, index, frame, detection):
+        detections = []
+        for d in detection:
+            detections.append([
+                d[0],
+                [d[1][0], d[1][1], d[1][2], d[1][3]],
+                d[2]])
+
+        self.data.append(
+            {
+                "frame_counter": index,
+                "detections": detections
+            })
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=str, default='video.mp4', help='source video')
@@ -112,7 +138,7 @@ if __name__ == '__main__':
     if not Path(opt.source).exists():
         raise ValueError(f"invalid argument for --source {opt.source}. Path does not exist")
 
-    writer = CocoLabelResultWriter(opt.coco_out)
+    writer = CustomJsonLabelResultWriter(opt.coco_out)
     model = load_yolo_model(device=opt.device)
 
     vid_result = get_writer(opt.result, fps=30)
@@ -123,7 +149,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         while ret:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame, det_result = process_model_output(run_model(frame, model=model, device=opt.device, imgsz=640), opt.conf_thres)
+            frame, det_result = process_model_output(run_model(frame, model=model, device=opt.device, imgsz=640),
+                                                     opt.conf_thres)
             writer.append_frame(i, frame, det_result)
 
             i += 1
