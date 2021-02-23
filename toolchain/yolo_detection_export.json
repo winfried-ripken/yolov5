@@ -1,0 +1,4 @@
+{
+  "vid_in": "/home/winfried/blur_benchmark/low_cov/constant_16x/full_out.mp4",
+  "numpy_out": "/home/winfried/blur_benchmark/low_cov/full_out_yolo.npy"
+}
