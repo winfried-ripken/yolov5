@@ -3,5 +3,5 @@
   "extends": [
     "config:base"
   ],
-  "enabledManagers": ["pip"]
+  "enabledManagers": ["pip_requirements"]
 }
