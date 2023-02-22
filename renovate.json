@@ -10,22 +10,19 @@
   "constraints": {
     "python": "==3.9"
   },
-  "schedule:daily",
+  "groupName": "all dependencies",
+  "groupSlug": "all",
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "packageRules": [
     {
       "groupName": "all dependencies",
-      "separateMajorMinor": true,
       "groupSlug": "all",
-      "packageRules": [
-        {
-          "packagePatterns": [
-            "*"
-          ],
-          "groupName": "all dependencies",
-          "groupSlug": "all"
-        }
-      ],
-      "lockFileMaintenance": {
-        "enabled": true
-      }
+      "matchPackagePatterns": [
+        "*"
+      ]
     }
+  ],
+  "separateMajorMinor": false
 }
