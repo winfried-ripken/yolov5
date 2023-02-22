@@ -5,7 +5,7 @@
   ],
   "constraints": {
     "python": "==3.9"
-  }
+  },
   "enabledManagers": ["pip-compile"],
   "pip-compile": {
     "fileMatch": ["(^|/)requirements\\.in$"]
