@@ -3,5 +3,11 @@
   "extends": [
     "config:base"
   ],
-  "enabledManagers": ["pip_requirements"]
+  "constraints": {
+    "python": "==3.9"
+  }
+  "enabledManagers": ["pip-compile"],
+  "pip-compile": {
+    "fileMatch": ["(^|/)requirements\\.in$"]
+  }
 }
